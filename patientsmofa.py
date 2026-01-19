@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Configuración de rutas
-K_FOLDER = "K12"  # Cambia esto al modelo que hayas elegido
+K_FOLDER = "K12"
 INPUT_PATH = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/MOFAFLEX_FINAL_ANALYSIS/{K_FOLDER}"
 OUTPUT_PATH = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/postanalysis/{K_FOLDER}"
 GV_FILE = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/matrizGV4_mapeado.csv"

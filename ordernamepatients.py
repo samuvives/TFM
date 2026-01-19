@@ -2,7 +2,9 @@ import pandas as pd
 import os
 import sys
 
-# 1. Configuración 
+# Arrange all the files in the same order
+
+# 1. Files
 archivos = [
     "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/VC/MPA_GT_1_2.tsv",
     "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/EXPRESSION/tpmexpression.tsv",
@@ -18,47 +20,44 @@ archivos = [
 
 columna_id = "sample_ID"
 
-print(">>> Iniciando proceso de alineación optimizado...", flush=True)
+print("Starting alignment", flush=True)
 
-# 2. Establecer el ORDEN DE REFERENCIA de forma ligera
-# Optimizamos leyendo SOLO la columna sample_ID para no cargar 400MB innecesariamente
+# Stablish reference order
 try:
-    print(f">>> Leyendo IDs de referencia desde: {os.path.basename(archivos[0])}", flush=True)
+    print(f"Reference IDs from the file: {os.path.basename(archivos[0])}", flush=True)
     orden_maestro = pd.read_csv(archivos[0], sep='\t', usecols=[columna_id])[columna_id].tolist()
-    print(f">>> Orden maestro establecido con {len(orden_maestro)} muestras.", flush=True)
+    print(f"Order stablished, {len(orden_maestro)} samples.", flush=True)
 except Exception as e:
-    print(f"ERROR CRÍTICO al leer el archivo de referencia: {e}", flush=True)
+    print(f"CRITICAL ERROR reading reference file: {e}", flush=True)
     sys.exit(1)
 
-# 3. Procesar y sobreescribir
+# Process and overwrite the files
 for i, ruta_archivo in enumerate(archivos, 1):
     nombre_archivo = os.path.basename(ruta_archivo)
-    print(f"[{i}/{len(archivos)}] Procesando: {nombre_archivo}...", end=" ", flush=True)
+    print(f"[{i}/{len(archivos)}] Processing: {nombre_archivo}...", end=" ", flush=True)
     
     if os.path.exists(ruta_archivo):
         try:
-            # OPTIMIZACIÓN DE MEMORIA: 
+            # MEMORY OPTIMIZATION: 
             # engine='c' es más rápido para archivos grandes.
             # low_memory=False evita avisos de tipos de datos mixtos en matrices grandes.
             df = pd.read_csv(ruta_archivo, sep='\t', low_memory=False, engine='c')
             
-            # Reordenar
-            # reindex es ideal para MOFA porque si falta un ID, crea la fila con NaNs
+            # Rearrange
+            # put the sample_ID as index, apply the order, and get sample_ID back as a column
             df_reordenado = df.set_index(columna_id).reindex(orden_maestro).reset_index()
             
-            # Sobreescribir el archivo original
+            # Overwrite the original file
             # Na_rep='' asegura que los valores vacíos se guarden como celdas vacías (estándar TSV)
             df_reordenado.to_csv(ruta_archivo, sep='\t', index=False, na_rep='NA')
             
-            print("HECHO ✅", flush=True)
-            
-            # Liberar memoria explícitamente (buena práctica en HPC)
+            print("DONE", flush=True)
             del df
             del df_reordenado
             
         except Exception as e:
             print(f"ERROR: {e}", flush=True)
     else:
-        print(f"ERROR: Archivo no encontrado en la ruta.", flush=True)
+        print(f"ERROR: File not found in the path.", flush=True)
 
-print("\n>>> Proceso finalizado con éxito.", flush=True)
+print("\n Process finished with success.", flush=True)
