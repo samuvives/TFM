@@ -63,20 +63,15 @@ def compare_models(k_small, k_large, base_path):
 # 1. PARÁMETROS
 # =======================================================
 print("[1] Inicializando parámetros")
-INPUT_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
-WORKING_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal"
-N_FACTORS_LIST = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+INPUT_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUTSUBSETS"
+WORKING_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/APPROACHSUBSETS"
+N_FACTORS_LIST = [10, 12]
 
 VIEWS_CONFIG = {
     "Metabolomics": {"path": f"{INPUT_DIR}/renamed_Metabolomics_data_case.tsv", "likelihood": "Normal", "scale": True},
     "Lipidomics": {"path": f"{INPUT_DIR}/renamed_lipidomics_data_case.tsv", "likelihood": "Normal", "scale": True},
     "Microbiota": {"path": f"{INPUT_DIR}/renamed_microbiota_SOFA_case_tumoral.tsv", "likelihood": "Normal", "scale": True},
     "SV_DEL": {"path": f"{INPUT_DIR}/SV_DEL_Patient_Gene_Matrix.tsv", "likelihood": "Bernoulli", "scale": False},
-    "SV_DUP": {"path": f"{INPUT_DIR}/SV_DUP_Patient_Gene_Matrix.tsv", "likelihood": "Bernoulli", "scale": False},
-    "SV_INS": {"path": f"{INPUT_DIR}/SV_INS_Patient_Gene_Matrix.tsv", "likelihood": "Bernoulli", "scale": False},
-    "SV_INV": {"path": f"{INPUT_DIR}/SV_INV_Patient_Gene_Matrix.tsv", "likelihood": "Bernoulli", "scale": False},
-    "SV_TRA": {"path": f"{INPUT_DIR}/SV_TRA_Patient_Gene_Matrix.tsv", "likelihood": "Bernoulli", "scale": False},
-    "VC_11": {"path": f"{INPUT_DIR}/MPA_GT_1_1.tsv", "likelihood": "Bernoulli", "scale": False},
     "VC_12": {"path": f"{INPUT_DIR}/MPA_GT_1_2.tsv", "likelihood": "Bernoulli", "scale": False},
     "EXPRESSION": {"path": f"{INPUT_DIR}/tpmexpression.tsv", "likelihood": "Normal", "scale": True}
 }
@@ -130,7 +125,6 @@ for k in N_FACTORS_LIST:
     zfactorsfile = os.path.join(outdir, "factor_activity.csv")
     factor_activity.to_csv(zfactorsfile)
     zfactors(zfactorsfile, outdir, gv_names)
-    print("3.1 done")
 
     # 3.2 W Weights & Stacked Bar
     weights = model.get_weights(ordered=True) 
@@ -142,7 +136,6 @@ for k in N_FACTORS_LIST:
     plt.title(f"Composición de Factores (K={k})")
     plt.savefig(os.path.join(figdir, "factor_composition_stacked.png"))
     plt.close()
-    print("3.2 done")
 
     # ===================================================
     # 3.10 RANKING GLOBAL
@@ -158,7 +151,6 @@ for k in N_FACTORS_LIST:
 
     # Definimos df_global uniendo todos los datos
     df_global = pd.concat(all_feats).sort_values(by='GlobalScore', ascending=False)
-    print("todo okey en 3.10")
 
     # ===================================================
     # 3.11 LIDERES POR VISTA (TOP 3)
@@ -176,7 +168,6 @@ for k in N_FACTORS_LIST:
     )
 
     top_leaders.to_csv(os.path.join(outdir, "top_3_leaders_per_view.csv"), index=False)
-    print("todo okey en 3.11")
 
     # ===================================================
     # 3.12 HEATMAP DE LÍDERES (INTEGRADO)
@@ -186,19 +177,32 @@ for k in N_FACTORS_LIST:
     for _, row in top_leaders.iterrows():
         v = row['View']
         f = row['Feature']
-
+        
         # Accedemos a los pesos originales usando la vista y el nombre de la variable
         ws = weights[v][f]
         ws.name = f"{v}: {f}"
         list_w.append(ws)
-
+    
     plt.figure(figsize=(12, 10))
     sns.heatmap(pd.concat(list_w, axis=1).T, cmap="RdBu_r", center=0)
     plt.title(f"Integrated Leaders Heatmap (K={k})")
     plt.tight_layout()
     plt.savefig(os.path.join(figdir, "integrated_leaders_heatmap.png"))
     plt.close()
-    print("todo okey en 3.12")
+
+
+    # 3.10 Ranking & Refinaciones
+    all_global_features = []
+    for view, W in weights.items():
+        imp = (W**2).sum(axis=0)
+        df_imp = imp.to_frame(name='GlobalScore')
+        df_imp['View'] = view
+        df_imp['RankWithinView'] = df_imp['GlobalScore'].rank(ascending=False).astype(int)
+        df_imp['PctContributionToView'] = (df_imp['GlobalScore'] / df_imp['GlobalScore'].sum()) * 100
+        all_global_features.append(df_imp)
+
+    df_global_total = pd.concat(all_global_features).sort_values(by='GlobalScore', ascending=False)
+    df_global_total.to_csv(os.path.join(outdir, "ranking_global_completo.csv"))
 
     # ===================================================
     # 3.13 LOADING PLOTS (ENFOQUE DE LÍDERES) - BLINDADO
@@ -230,7 +234,6 @@ for k in N_FACTORS_LIST:
             axes[i].set_ylabel("Weight (W)")
             axes[i].axhline(0, color='black', linewidth=0.8)
             axes[i].tick_params(axis='x', rotation=45)
-            print("todo okey en 3.13")
 
         except Exception as e:
             print(f"   [!] Error procesando líder para la vista {view}: {e}")
@@ -239,6 +242,7 @@ for k in N_FACTORS_LIST:
     plt.tight_layout()
     plt.savefig(os.path.join(figdir, "leaders_loading_focus.png"), dpi=300)
     plt.close()
+
     # ===================================================
     # 3.14 CORRELACION CLINICA (FACTORES VS GV)
     # ===================================================
@@ -255,7 +259,6 @@ for k in N_FACTORS_LIST:
     plt.tight_layout()
     plt.savefig(os.path.join(figdir, "clinical_correlation_heatmap.png"))
     plt.close()
-    print("3.14 done")
 
 
     # ===================================================
@@ -287,7 +290,6 @@ for k in N_FACTORS_LIST:
         df_W_final.to_csv(os.path.join(weights_outdir, file_name))
 
     print(f"Archivos CSV de matrices completas guardados en: {outdir}")
-    print("3.15 done")
 
     print(f"Finalizado K={k}\n")
 

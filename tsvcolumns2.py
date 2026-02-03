@@ -4,11 +4,9 @@ import os
 # 1. Define aquí tus archivos y sus sufijos correspondientes
 # Estructura: "nombre_archivo.tsv": "SUFIJO"
 configuracion = {
-    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_DEL_Patient_Gene_Matrix.tsv": "DEL",
-    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_DUP_Patient_Gene_Matrix.tsv": "DUP",
-    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_INS_Patient_Gene_Matrix.tsv": "INS",
-    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_INV_Patient_Gene_Matrix.tsv": "INV",
-    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_TRA_Patient_Gene_Matrix.tsv": "TRA"
+    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/NEWMETLIPMIC/renamed_microbiota_SOFA_case_tumoral.tsv": "MIC",
+    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/NEWMETLIPMIC/renamed_Metabolomics_data_case.tsv": "MET",
+    "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/NEWMETLIPMIC/renamed_lipidomics_data_case.tsv": "LIP"
 }
 
 for archivo, sufijo in configuracion.items():

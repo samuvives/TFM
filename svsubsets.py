@@ -71,12 +71,13 @@ genelist = pd.read_excel(os.path.join(path, "svgenes.xlsx"))
 genesperpatient = {}
 
 for file in [f for f in os.listdir(path) if f.endswith(".tsv")]:
-    base_name = os.path.basename(archivo)
+    nombre_base = os.path.basename(archivo)
     fullpath = os.path.join(path, file)
     svfile = pd.read_csv(fullpath, sep="\t", usecols=["", ""])
     svfile = insertgenes(svfile)
     df_temp = sv_file[["officialname"]]
-    df_temp['archivo_origen'] = base_name # pones nombre de archivo en todas las filas del dataframe
+    df_temp['archivo_origen'] = nombre_base # pones nombre de archivo en todas las filas del dataframe
     lista_df.append(df_temp) # lista de dataframes
 df_final = pd.concat(lista_df, ignore_index=True)
+
 
