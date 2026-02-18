@@ -1,6 +1,20 @@
 # script to check for NAs in different files
 import os
 import pandas as pd
+
+def checknas(PATH, file):
+    """Reads the file and prints the total NAs"""
+    fullfile = os.path.join(PATH, file)
+    data = pd.read_csv(fullfile, sep="\t")
+    numberna = int(data.isnull().sum().sum())
+    if numberna > 0:
+        print(f"{file} has nas")
+    else:
+        print(f"{file} has no nas")
+    return numberna
+
+
+# files of raw transcript data
 PATH = "/home/vant/Escritorio/TFM/datostfm/tpmssplicing/"
 listfiles = [
     "FAMCOLON_16.rsem.merged.transcript_tpm.tsv", "FAMCOLON_19.rsem.merged.transcript_tpm.tsv", 
@@ -8,24 +22,12 @@ listfiles = [
     "transcript_tpm_matrix_suppa.tsv"
     ]
 
-def checknas(file):
-    fullfile = os.path.join(PATH, file)
-    data = pd.read_csv(fullfile, sep="\t")
-    numberna = int(data.isnull().sum().sum())
-    print(numberna)
-    if numberna > 0:
-        print(f"{file} has nas")
-    else:
-        print(f"{file} has no nas")
-        
-
 for file in listfiles:
-    checknas(file)
+    numberna = checknas(PATH, file)
+    print(f"{file} has {numberna} NAs")
 
 
-
-import os
-import pandas as pd
+# input files of continuous views of MOFA-FLEX
 INPUT_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
 VIEWS = {
     "Metabolomics": f"{INPUT_DIR}/renamed_Metabolomics_data_case.tsv",
@@ -34,13 +36,6 @@ VIEWS = {
     "EXPRESSION": f"{INPUT_DIR}/tpmexpression.tsv"
 }
 
-
-nadict = {}
-for view, path in VIEWS.items():
-    data = pd.read_csv(path, sep="\t")
-    numbernas = data.isnull().sum().sum()
-    nadict[view] = numbernas
-
-print("Results:")
-for view, nanumber in nadict.items():
-    print(f"View: {view}, Total NAs: {nanumber}")
+for view, file in VIEWS.items():
+    numberna = checknas(INPUT_DIR, file)
+    print(f"{view} file has {numberna} NAs")

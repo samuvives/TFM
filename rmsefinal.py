@@ -7,10 +7,13 @@ import seaborn as sns
 # ==========================================
 # 1. CONFIGURACIÓN DE RUTAS Y PARÁMETROS
 # ==========================================
+APPROACH = "simpleapproachfinal"
 INPUT_PATH = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
-BASE_OUTPUT_PATH = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/MOFAFLEX_FINAL_ANALYSIS"
-Z_PATH_TEMPLATE = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/MOFAFLEX_FINAL_ANALYSIS/K{k}/complete_factors_Z_K{k}.csv"
+BASE_OUTPUT_PATH = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{APPROACH}/MOFAFLEX_FINAL_ANALYSIS"
+Z_PATH_TEMPLATE = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{APPROACH}/MOFAFLEX_FINAL_ANALYSIS/K{k}/complete_factors_Z_K{k}.csv"
 
+K_LISTDIRS = [i in os.listdir(BASE_OUTPUT_PATH) if i.startswith("K")]
+K_LIST = [i.replace("K", "") in K_LISTDIRS]
 K_LIST = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
 
 view_mapping = {
@@ -82,7 +85,7 @@ def calcular_metricas_reconstruccion(path_input, path_weights, df_z, likelihood=
     return rmse, nrmse
 
 # ==========================================
-# 3. BUCLE PRINCIPAL
+# 3. MAIN LOOP
 # ==========================================
 results = []
 
@@ -132,11 +135,9 @@ df_final = pd.DataFrame(results)
 # 4. GRÁFICO Y GUARDADO
 # ==========================================
 if not df_final.empty:
-    # Configurar estilo
     plt.figure(figsize=(14, 8))
     sns.set_style("whitegrid")
     
-    # Crear gráfico separando por tipo de distribución
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     
     # Subplot 1: Vistas Gaussianas
@@ -157,9 +158,9 @@ if not df_final.empty:
         axes[1].set_title('Binary Views', fontsize=14)
         axes[1].set_ylabel('RMSE')
         axes[1].set_xlabel('Number of factors (K)')
-        axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Vista')
+        axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='View')
     
-    plt.suptitle('Convergencia del Modelo por Tipo de Distribución', fontsize=16)
+    plt.suptitle('RMSE evolution accross factors', fontsize=16)
     plt.tight_layout()
 
     # Guardar en la ruta de salida

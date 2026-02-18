@@ -1,77 +1,97 @@
-# como se obtuvieron los weights
 # cada archivo una view, cada fila una feature, cada columna un factor
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
 
-def processweightfiles(WEIGHTS_DIR):
-    view_activity_dict = {}
 
-    # search files
-    # Rows = Genes/Variables, Columns = Factors
-    for file in os.listdir(WEIGHTS_DIR):
+approach = "OBTAININGELBO"
+PATH = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{approach}"
+INPUTDIRPATH = os.path.join(PATH, "MOFAFLEX_FINAL_ANALYSIS")
+LISTDIRS = [f for f in os.listdir(INPUTDIRPATH) if os.path.isdir(os.path.join(INPUTDIRPATH, f))]
+OUTPUTDIR = os.path.join(PATH, "postanalysis")
+os.makedirs(OUTPUTDIR, exist_ok=True)
 
-        # get view name
-        viewname = file.replace(".csv", "")
-        viewname = viewname.split("_")[2]
+def stackedfactorsactivity(df_r2, KDIR, OUTPUTPATH):
+    df_r2 = df_r2.copy()
+    # barplot stacked
+    df_r2['Total_Var'] = df_r2.sum(axis=1)
 
-        # read file
-        W = pd.read_csv(file)
-        Wseries = W**2.sum(axis=0)
-        view_activity_dict[viewname: Wseries]
+    # 2. Ordenar de mayor a menor y eliminar la columna temporal para el gráfico
+    df_r2 = df_r2.sort_values(by='Total_Var', ascending=False).drop(columns=['Total_Var'])
+    df_r2_nonguided = df_r2[df_r2.index.str.startswith("Factor")]
 
-    df_activity_all = pd.DataFrame(view_activity_dict)
 
-    # sumas todas las columnas y te quedas con un valor global por factor
-    total_activity = (df_activity_all
-        .sum(axis=1)
-        .sort_values(ascending=False))
+    ax = df_r2.plot(kind='bar',
+                  stacked=True,
+                  figsize=(12, 7),
+                  colormap="tab20",
+                  edgecolor='white',
+                  linewidth=0.5)
 
-    df_plot = df_activity_all.loc[total_activity.index]
+    plt.title(f"Factor composition per view. {KDIR}", fontsize=16, pad=20)
+    plt.ylabel("Activity", fontsize=12)
+    plt.xlabel("Factors", fontsize=12)
+    plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
 
-    return df_plot
-
-def stackedgraph(df_plot, k):
-
-    # ==========================================
-    # 3. GENERACIÓN DEL GRÁFICO STACKED
-    # ==========================================
-    ax = df_plot.plot(kind='bar', 
-                      stacked=True, 
-                      figsize=(12, 7), 
-                      colormap="tab20", 
-                      edgecolor='white', 
-                      linewidth=0.5)
-
-    plt.title(f"Factor composition per view. {K_FOLDER}", fontsize=16, pad=20)
-    plt.ylabel("Sum of squared weights (Activity)", fontsize=12)
-    plt.xlabel("Factores", fontsize=12)
-    plt.xticks(rotation=45)
-
-    plt.legend(title="Omic views)", 
-               bbox_to_anchor=(1.05, 1), 
-               loc='upper left', 
-               fontsize=10, 
+    plt.legend(title="Omic views",
+               bbox_to_anchor=(1.05, 1),
+               loc='upper left',
+               fontsize=10,
                frameon=False)
 
     plt.tight_layout()
+    plt.savefig(OUTPUTPATH, dpi=300, bbox_inches='tight')
+    plt.close()
 
-    save_path = os.path.join(OUTPUT_PATH, f"factor_composition_stacked_{K_FOLDER}.png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    
-    print(f"--- GRÁFICO GENERADO ---")
-    print(f"Archivo guardado en: {save_path}")
+def stackedfactorsactivitywiththr(df_r2, KDIR, OUTPUTPATHWITHTHR):
+    df_r2 = df_r2.copy()
 
-if __name__ == "__main__":
+    # barplot stacked
+    df_r2['Total_Var'] = df_r2.sum(axis=1)
 
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    import os
+    # 2. Ordenar de mayor a menor y eliminar la columna temporal para el gráfico
+    df_r2 = df_r2.sort_values(by='Total_Var', ascending=False).drop(columns=['Total_Var'])
+    df_r2_nonguided = df_r2[df_r2.index.str.startswith("Factor")]
 
-    # parameters
-    k = 30
-    K_FOLDER = "K" + str(k)
+    max_height = df_r2_nonguided.sum(axis=1).max()
+    threshold = max_height * 0.01
+    threshold2 = max_height * 0.02
 
-    WEIGHTS_DIR = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/MOFAFLEX_FINAL_ANALYSIS/{K_FOLDER}/complete_weights/"
-    OUTPUT_PATH = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/postanalysis/{K_FOLDER}"
-    os.makedirs(OUTPUT_PATH, exist_ok=True)
-    df_plot = processweightfiles(WEIGHTS_DIR)
-    stackedgraph(df_plot, k)
+    ax = df_r2.plot(kind='bar',
+                  stacked=True,
+                  figsize=(12, 7),
+                  colormap="tab20",
+                  edgecolor='white',
+                  linewidth=0.5)
+
+    ax.axhline(y=threshold, color='red', linestyle='--', linewidth=1, label=f'Threshold (1%)')
+    ax.axhline(y=threshold2, color='green', linestyle='--', linewidth=1, label=f'Threshold (2%)')
+    plt.title(f"Factor composition per view. {KDIR}", fontsize=16, pad=20)
+    plt.ylabel("Activity", fontsize=12)
+    plt.xlabel("Factors", fontsize=12)
+    plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
+
+    plt.legend(title="Omic views",
+               bbox_to_anchor=(1.05, 1),
+               loc='upper left',
+               fontsize=10,
+               frameon=False)
+
+    plt.tight_layout()
+    plt.savefig(OUTPUTPATHWITHTHR, dpi=300, bbox_inches='tight')
+    plt.close()
+
+for KDIR in LISTDIRS:
+    fullpath = os.path.join(INPUTDIRPATH, KDIR)
+    fullpath = os.path.join(fullpath, "varianza_explicada_por_factor.csv")
+    df_r2 = pd.read_csv(fullpath, index_col=0)
+
+    OUTPUTPATH = os.path.join(OUTPUTDIR, f"factor_composition_stacked_{KDIR}.png")
+    stackedfactorsactivity(df_r2, KDIR, OUTPUTPATH)
+
+    OUTPUTPATHWITHTHR = os.path.join(OUTPUTDIR, f"factor_composition_stacked_thr_{KDIR}.png")
+    stackedfactorsactivitywiththr(df_r2, KDIR, OUTPUTPATHWITHTHR)
+
+
+
 

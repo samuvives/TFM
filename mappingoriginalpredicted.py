@@ -14,6 +14,7 @@
 # al hacer un shape he visto que las features del input y de los weights no son las mismas
 # esto ocurre porque filtra, de tal forma que cuando tu obtienes los weights no estaran
 # todas las features originales solo las que no ha reducido el modelo
+# listinput = np.log10(np.array(listinput) + 1)
 import os
 import numpy as np
 import pandas as pd
@@ -26,6 +27,7 @@ WEIGHTDIR = os.path.join(MODELDIR, "complete_weights")
 OUTPUTDIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/postanalysis/scattersinputvsmodel"
 os.makedirs(OUTPUTDIR, exist_ok=True)
 viewlist = ["EXPRESSION", "Microbiota", "SV_INS", "VC_11", "Lipidomics", "SV_DEL", "SV_INV", "VC_12", "Metabolomics", "SV_DUP", "SV_TRA"]
+continuousviews = ["EXPRESSION", "Microbiota", "Lipidomics", "Metabolomics"]
 
 # input
 INPUTFILES = {
@@ -95,9 +97,18 @@ def getmodeled(path, viewinput):
 
 def scatterinputvsmodeled(view, listinput, listmodeled):
     fig, ax = plt.subplots()
-    sns.regplot(x=listinput, y=listmodeled, color = "#99582a", line_kws={"color": "#6f1d1b"})
-    ax.set_xlabel("ORIGINAL")
+    sns.regplot(x=listinput, y=listmodeled, 
+        color = "#99582a",
+        scatter_kws={'s': 1, 'alpha': 0.5},
+        line_kws={"color": "#6f1d1b"})
+
+    if view in continuousviews:
+        ax.set_xlabel("ORIGINAL (log scale)")
+    else:
+        ax.set_xlabel("ORIGINAL")
+
     ax.set_ylabel("MODELED")
+    ax.set_xscale("log")
     ax.set_title(f"Scatter original vs model, view = {view}")
     savepath = os.path.join(OUTPUTDIR, f"scatteroriginalvsmodel_{view}.png")
     plt.savefig(savepath)
