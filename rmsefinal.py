@@ -1,20 +1,22 @@
+# the rmse measures the difference between the model and the original data
+# the original data should be the data given to the model, in this case, normalized
+
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.preprocessing import StandardScaler
 
 # ==========================================
-# 1. CONFIGURACIÓN DE RUTAS Y PARÁMETROS
+# PARAMETERS
 # ==========================================
 APPROACH = "simpleapproachfinal"
 INPUT_PATH = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
-BASE_OUTPUT_PATH = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{APPROACH}/MOFAFLEX_FINAL_ANALYSIS"
-Z_PATH_TEMPLATE = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{APPROACH}/MOFAFLEX_FINAL_ANALYSIS/K{k}/complete_factors_Z_K{k}.csv"
+BASE_OUTPUT_PATH = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{APPROACH}/MOFAFLEX_FINAL_ANALYSIS"
 
-K_LISTDIRS = [i in os.listdir(BASE_OUTPUT_PATH) if i.startswith("K")]
-K_LIST = [i.replace("K", "") in K_LISTDIRS]
-K_LIST = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+K_LISTDIRS = [i for i in os.listdir(BASE_OUTPUT_PATH) if i.startswith("K")]
+K_LIST = [int(i.replace("K", "")) for i in K_LISTDIRS]
 
 view_mapping = {
     "EXPRESSION": "tpmexpression.tsv",
@@ -43,12 +45,19 @@ for view in view_mapping.keys():
 # 2. FUNCIÓN DE CÁLCULO (nRMSE) con soporte para Bernoulli
 # ==========================================
 def sigmoid(x):
+    # It is not being applied
     x = np.clip(x, -50, 50)  # numerical stability
     return 1.0 / (1.0 + np.exp(-x))
 
 def calcular_metricas_reconstruccion(path_input, path_weights, df_z, likelihood="gaussian"):
     # Load data
+    # input = samples (rows) x features (columns)
     df_in = pd.read_csv(path_input, sep="\t", index_col=0)
+
+    if likelihood == "gaussian":
+        df_in = pd.DataFrame(StandardScaler().fit_transform(df_in), index=df_in.index, columns=df_in.columns)
+
+    # weight matrices = features (rows) x factors (columns)
     df_w  = pd.read_csv(path_weights, index_col=0)
 
     # Align factors
@@ -57,11 +66,15 @@ def calcular_metricas_reconstruccion(path_input, path_weights, df_z, likelihood=
     w_matrix = df_w[common_factors]
 
     # Reconstruction on linear predictor
-    lin_pred = np.dot(z_matrix.values, w_matrix.values.T)  # (samples, features)
-    y_pred = lin_pred 
+    # weight matrices = features (rows) x factors (columns)
+    # weight matrices.T = factors (rows) x features (columns)
+    # Z matrix = samples (rows) x factors (columns)
+    y_pred = np.dot(z_matrix.values, w_matrix.values.T)  # (samples, features)
+    if likelihood == "bernoulli":
+        y_pred = 1 / (1 + np.exp(-y_pred))
     df_pred = pd.DataFrame(y_pred, index=z_matrix.index, columns=df_w.index)
 
-    # Align samples/features
+    # Align samples/features of the input with the remaining after the modeling
     m_comunes = df_in.index.intersection(df_pred.index)
     f_comunes = df_in.columns.intersection(df_pred.columns)
 
@@ -90,8 +103,8 @@ def calcular_metricas_reconstruccion(path_input, path_weights, df_z, likelihood=
 results = []
 
 for k in K_LIST:
-    print(f"\nCalculando para K={k}...")
-    path_z = Z_PATH_TEMPLATE.format(k=k)
+    print(f"\nCalculating for K={k}...")
+    path_z = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{APPROACH}/MOFAFLEX_FINAL_ANALYSIS/K{k}/complete_factors_Z_K{k}.csv"
     weights_dir = f"{BASE_OUTPUT_PATH}/K{k}/complete_weights"
 
     if not os.path.exists(path_z) or not os.path.exists(weights_dir):
@@ -120,11 +133,11 @@ for k in K_LIST:
                     'nRMSE': nrmse_val
                 })
                 views_procesadas += 1
-                print(f"  ✓ {view} ({likelihood}): nRMSE = {nrmse_val:.4f}")
+                print(f"   {view} ({likelihood}): nRMSE = {nrmse_val:.4f}")
             except Exception as e:
-                print(f"  ✗ Error en {view} K{k}: {e}")
+                print(f"   Error en {view} K{k}: {e}")
         else:
-            print(f"  ✗ No se encontró archivo de pesos para {view} K{k}")
+            print(f"   No se encontró archivo de pesos para {view} K{k}")
 
     print(f"  Procesadas: {views_procesadas} vistas para K={k}")
 
@@ -135,22 +148,21 @@ df_final = pd.DataFrame(results)
 # 4. GRÁFICO Y GUARDADO
 # ==========================================
 if not df_final.empty:
-    plt.figure(figsize=(14, 8))
-    sns.set_style("whitegrid")
     
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    sns.set_style("whitegrid")
     
-    # Subplot 1: Vistas Gaussianas
+    # Subplot 1: Continuous views
     gaussian_views = df_final[df_final['Likelihood'] == 'gaussian']
     if not gaussian_views.empty:
         sns.lineplot(data=gaussian_views, x='K', y='RMSE', hue='View', 
                     marker='o', linewidth=2, ax=axes[0])
-        axes[0].set_title('Continuous views)', fontsize=14)
+        axes[0].set_title('Continuous views', fontsize=14)
         axes[0].set_ylabel('RMSE')
         axes[0].set_xlabel('Number of Factors (K)')
         axes[0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='View')
     
-    # Subplot 2: Vistas Bernoulli
+    # Subplot 2: Binary views
     bernoulli_views = df_final[df_final['Likelihood'] == 'bernoulli']
     if not bernoulli_views.empty:
         sns.lineplot(data=bernoulli_views, x='K', y='RMSE', hue='View', 
@@ -160,7 +172,7 @@ if not df_final.empty:
         axes[1].set_xlabel('Number of factors (K)')
         axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='View')
     
-    plt.suptitle('RMSE evolution accross factors', fontsize=16)
+    plt.suptitle(f"RMSE evolution across factors. {APPROACH}", fontsize=16)
     plt.tight_layout()
 
     # Guardar en la ruta de salida

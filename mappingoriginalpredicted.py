@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.preprocessing import StandardScaler
 
 INPUTDIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
 MODELDIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/MOFAFLEX_FINAL_ANALYSIS/K12"
@@ -63,8 +64,10 @@ WEIGHTFILES = {
     "SV_TRA": "complete_weights_SV_TRA_K12.csv"
     }
 
-def getinputfile(path):
+def getinputfile(path, view):
     inputview = pd.read_csv(os.path.join(INPUTDIR, path), sep="\t", index_col=0)
+    if view in continuousviews:
+        inputview = pd.DataFrame(StandardScaler().fit_transform(inputview), index=inputview.index, columns=inputview.columns)
     return inputview
 
 def getmodeled(path, viewinput):
@@ -118,7 +121,7 @@ def scatterinputvsmodeled(view, listinput, listmodeled):
 # MAIN LOOP
 for view in viewlist:
     inputpath = INPUTFILES[view]
-    viewinput = getinputfile(inputpath)
+    viewinput = getinputfile(inputpath, view)
 
     print("Dimensions of view input")
     print(viewinput.shape)

@@ -93,13 +93,17 @@ for k in N_FACTORS_LIST:
     # ===================================================
     # VARIANCE EXPLAINED PER VIEW
     # ===================================================
+    # if total True
+    # groups are columns and views are rows, and I only have one group
     varianceperview = model.get_r2(total=True)
     varianceperview.to_csv(os.path.join(outdir, f"varianceperview_K{k}.csv"))
 
     # ===================================================
     # VARIANCE EXPLAINED PER FACTOR
     # ===================================================
-    # variance per factor values
+    # variance per factor method
+    # total = False returns a dict of dataframe
+    # each key is a group
     r2_dict = model.get_r2(total=False)
     nombre_grupo = list(r2_dict.keys())[0]
     df_r2 = r2_dict[nombre_grupo]

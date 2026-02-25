@@ -20,7 +20,7 @@ listfiles = [
     "FAMCOLON_16.rsem.merged.transcript_tpm.tsv", "FAMCOLON_19.rsem.merged.transcript_tpm.tsv", 
     "FAMCOLON_21.rsem.merged.transcript_tpm.tsv", "FAMCOLON_27.rsem.merged.transcript_tpm.tsv", 
     "transcript_tpm_matrix_suppa.tsv"
-    ]
+]
 
 for file in listfiles:
     numberna = checknas(PATH, file)
