@@ -17,7 +17,6 @@ WORKING_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproach"
 INPUT_DIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
 N_FACTORS_LIST = [20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40]
 
-# Configuración de vista
 VIEWS_CONFIG = {
     "Metabolomics": {"path": f'{INPUT_DIR}/renamed_Metabolomics_data_case.tsv', "likelihood": "Normal", "scale": True},
     "Lipidomics": {"path": f'{INPUT_DIR}/renamed_lipidomics_data_case.tsv', "likelihood": "Normal", "scale": True},
@@ -62,7 +61,7 @@ def run_diagnostics_single(model, gv_names, run_tag, output_dir):
         sns.heatmap(factors_reordered, cmap="RdBu_r", center=0)
         if gv_cols:
             plt.axvline(x=len(gv_cols), color='black', linewidth=2)
-        plt.title(f'Pacientes vs Factores - {run_tag}')
+        plt.title(f'Patients vs Factors - {run_tag}')
         plt.savefig(os.path.join(fig_dir, f"{run_tag}_factors_Z.png"), bbox_inches='tight')
         plt.close()
     except: plt.close()
@@ -135,9 +134,9 @@ for k in N_FACTORS_LIST:
         for view, W in weights.items():
             W.to_csv(os.path.join(run_dir, f"weights_{view}_K{k}.csv"))
             
-        print(f"✅ Completado con éxito: K={k}")
+        print(f"Completado con éxito: K={k}")
         
     except Exception as e:
-        print(f"❌ Error en la ejecución de K={k}: {e}")
+        print(f" Error en la ejecución de K={k}: {e}")
 
-print(f"\n🚀 Proceso finalizado. Resultados en: {base_output}")
+print(f"\n Proceso finalizado. Resultados en: {base_output}")

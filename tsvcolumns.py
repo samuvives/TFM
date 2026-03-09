@@ -1,9 +1,8 @@
+# 
 import pandas as pd
 import os
 
-# 1. Define aquí tus archivos y sus sufijos correspondientes
-# Estructura: "nombre_archivo.tsv": "SUFIJO"
-configuracion = {
+config = {
     "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_DEL_Patient_Gene_Matrix.tsv": "DEL",
     "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_DUP_Patient_Gene_Matrix.tsv": "DUP",
     "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_INS_Patient_Gene_Matrix.tsv": "INS",
@@ -11,6 +10,12 @@ configuracion = {
     "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT/SV/SV_TRA_Patient_Gene_Matrix.tsv": "TRA"
 }
 
+# new
+from tsvcolumns2 import addsufixes_tsv
+for filepath, suffix in config.items():
+    addsufixes_tsv(filepath, suffix)
+
+# old
 for archivo, sufijo in configuracion.items():
     # Verificamos si el archivo existe en la carpeta para evitar errores
     if os.path.exists(archivo):

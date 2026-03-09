@@ -22,11 +22,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 
+approach = "OBTAININGELBO"
+
 INPUTDIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/MOFAINPUT"
-MODELDIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/MOFAFLEX_FINAL_ANALYSIS/K12"
+
+MODELDIR = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{approach}/MOFAFLEX_FINAL_ANALYSIS/K12"
 WEIGHTDIR = os.path.join(MODELDIR, "complete_weights")
-OUTPUTDIR = "/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/simpleapproachfinal/postanalysis/scattersinputvsmodel"
+
+OUTPUTDIR = f"/gpfs/projects/bsc20/bsc236340/Project_IDIBAPS/{approach}/postanalysis/scattersinputvsmodel"
 os.makedirs(OUTPUTDIR, exist_ok=True)
+
 viewlist = ["EXPRESSION", "Microbiota", "SV_INS", "VC_11", "Lipidomics", "SV_DEL", "SV_INV", "VC_12", "Metabolomics", "SV_DUP", "SV_TRA"]
 continuousviews = ["EXPRESSION", "Microbiota", "Lipidomics", "Metabolomics"]
 
@@ -105,13 +110,9 @@ def scatterinputvsmodeled(view, listinput, listmodeled):
         scatter_kws={'s': 1, 'alpha': 0.5},
         line_kws={"color": "#6f1d1b"})
 
-    if view in continuousviews:
-        ax.set_xlabel("ORIGINAL (log scale)")
-    else:
-        ax.set_xlabel("ORIGINAL")
+    ax.set_xlabel("ORIGINAL")
 
     ax.set_ylabel("MODELED")
-    ax.set_xscale("log")
     ax.set_title(f"Scatter original vs model, view = {view}")
     savepath = os.path.join(OUTPUTDIR, f"scatteroriginalvsmodel_{view}.png")
     plt.savefig(savepath)
